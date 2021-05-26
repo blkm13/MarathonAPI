@@ -50,7 +50,6 @@ func main(){
 
 	for _, v := range events{
 		v.Key = strconv.FormatUint(hashValue(v), 20)
-		//fmt.Println(v.Key)
 	}
 
 	//------db connect ------
@@ -75,11 +74,9 @@ func main(){
 		panic(err)
 	}
 
-	//fmt.Println(firstEvent.Key)
 
 	// -------gin------------
 
-	//rout := "/"+ strconv.Itoa(int(hashValues[0]))+"/"
 
 	r:= gin.Default()
 
@@ -112,7 +109,7 @@ func main(){
 
 		newEvent := event{name,date,""}
 		newEvent.Key = strconv.FormatUint(hashValue(newEvent), 20)
-		//_, err := conn.Exec("insert into events (name, date) values ( $1, $2)", newEvent.Name, newEvent.Date)
+		_, err := conn.Exec("insert into events (name, date) values ( $1, $2)", newEvent.Name, newEvent.Date)
 		fmt.Printf("name: %s; date: %s; key: %s",newEvent.Name,newEvent.Date, newEvent.Key)
 	})
 
