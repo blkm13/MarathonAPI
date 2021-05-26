@@ -6,7 +6,7 @@ COPY go.mod .
 RUN go get -u github.com/jackc/tern
 RUN go get github.com/gin-gonic/gin
 
-COPY ../Med .
+COPY . .
 RUN go build src/main.go
 
 EXPOSE 8080

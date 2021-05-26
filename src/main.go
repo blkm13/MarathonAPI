@@ -3,8 +3,11 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
 	"github.com/mitchellh/hashstructure"
+	"net/http"
+	"strconv"
 
 	//"github.com/gin-gonic/gin"
 	//"net/http"
@@ -19,12 +22,13 @@ const(
 	dbname = "marathon"
 )
 
-type events struct {
-	name string
-	date string
+type event struct {
+	Name string
+	Date string
+	Key string
 }
 
-func hashValue(c events) uint64 {
+func hashValue(c event) uint64 {
 	hash, err := hashstructure.Hash(c, nil)
 	if err != nil {
 		panic(err)
@@ -35,21 +39,21 @@ func hashValue(c events) uint64 {
 
 func main(){
 
-	var event []events
+	var events []event
 
-	firstEvent := events{ "firstevent", "20.05.2021" }
-	event= append(event, firstEvent)
-	secondEvent := events{ "secondevent", "21.05.2021"}
-	event= append(event,secondEvent)
-	thirdEvent := events{" rthirdevent", "22.05.2021"}
-	event= append(event, thirdEvent)
+	firstEvent := event{ "firstevent", "20.05.2021", "key" }
+	events= append(events, firstEvent)
+	secondEvent := event{ "secondevent", "21.05.2021", "key"}
+	events= append(events,secondEvent)
+	thirdEvent := event{" thirdevent", "22.05.2021", "key"}
+	events= append(events, thirdEvent)
 
-	var hashValues []uint64
-
-	for _, v := range event{
-		hashValues = append(hashValues, hashValue(v))
+	for _, v := range events{
+		v.Key = strconv.FormatUint(hashValue(v), 20)
+		//fmt.Println(v.Key)
 	}
 
+	//------db connect ------
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 
@@ -65,24 +69,53 @@ func main(){
 		panic(err)
 	}
 
-	_, err = conn.Exec("insert into events (name, date) values ( 'fourthEvent', '21.05.2021')")
+	_, err = conn.Exec("insert into events (name, date) values ( 'seventhEvent', '21.05.2021')")
 
 	if err != nil {
 		panic(err)
 	}
 
-	/*fmt.Println(hashValues[0])
+	//fmt.Println(firstEvent.Key)
 
-	rout := "/"+ strconv.Itoa(int(hashValues[0]))+"/"
+	// -------gin------------
+
+	//rout := "/"+ strconv.Itoa(int(hashValues[0]))+"/"
 
 	r:= gin.Default()
 
-	r.LoadHTMLGlob("templates/*")
+	r.LoadHTMLGlob("templates/form.html")
 
-	r.GET(rout, func(context *gin.Context) {
-		context.HTML(http.StatusOK, "form.html", "title: Form page")
+	r.GET("/marathon", func(c *gin.Context) {
+		key := c.Query("key")
+		flag := true
+		for _, v := range events {
+			if key == v.Key {
+				c.JSON(http.StatusOK, v)
+				flag = false
+				break
+			}
+		}
+		if flag{
+			msg := "marathon "+key+" not found"
+			c.JSON(404, gin.H{
+				"message": msg,
+			})
+		}
+
 	})
 
-	r.Run()*/
+
+	r.POST("/marathon", func(c *gin.Context){
+
+		name := c.PostForm("name")
+		date := c.PostForm("date")
+
+		newEvent := event{name,date,""}
+		newEvent.Key = strconv.FormatUint(hashValue(newEvent), 20)
+		//_, err := conn.Exec("insert into events (name, date) values ( $1, $2)", newEvent.Name, newEvent.Date)
+		fmt.Printf("name: %s; date: %s; key: %s",newEvent.Name,newEvent.Date, newEvent.Key)
+	})
+
+	r.Run()
 
 }
