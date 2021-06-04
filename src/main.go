@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/lib/pq"
@@ -9,9 +10,6 @@ import (
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"net/http"
 	"strconv"
-	//"github.com/gin-gonic/gin"
-	//"net/http"
-	//"strconv"
 )
 
 const(
@@ -70,7 +68,7 @@ func main(){
 	}
 
 	//------db connect ------
-	/*psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable",
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 
 	conn, err := sql.Open("postgres", psqlInfo)
@@ -91,10 +89,14 @@ func main(){
 		panic(err)
 	}
 
-	 */
+
 	//fmt.Println(firstEvent.Key)
 
 	// -------gin------------
+
+	// -------gin------------
+
+
 	r:= gin.Default()
 
 	//r.LoadHTMLGlob("templates/form.html")
@@ -140,6 +142,7 @@ func main(){
 		newEvent := event{name,date,""}
 		newEvent.Key = strconv.FormatUint(hashValue(newEvent), 20)
 		//_, err = conn.Exec("insert into events (name, date) values ( $1, $2)", newEvent.Name, newEvent.Date)
+		_, err = conn.Exec("insert into events (name, date) values ( $1, $2)", newEvent.Name, newEvent.Date)
 		fmt.Printf("name: %s; date: %s; key: %s",newEvent.Name,newEvent.Date, newEvent.Key)
 		c.JSON(200,gin.H{"key": newEvent.Key})
 
