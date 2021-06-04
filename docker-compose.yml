@@ -6,6 +6,8 @@ services:
     working_dir: /usr/appl
     ports:
       - "5432:5432"
+    volumes:
+      - "dbdata:/var/lib/postgresql/data"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=12340
@@ -24,6 +26,9 @@ services:
       - "8080:8080"
     networks:
       - marathon
+
+volumes:
+  dbdata:
 
 
 networks:
