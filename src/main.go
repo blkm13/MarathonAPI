@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "Med/src/docs"
 	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -8,18 +9,19 @@ import (
 	"github.com/mitchellh/hashstructure"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	_ "github.com/swaggo/swag/example/celler/controller"
+	_ "github.com/swaggo/swag/example/celler/model"
 	"net/http"
 	"strconv"
 )
 
-const(
-	host ="127.0.0.1"
+const (
+	host = "db"
 	port = 5432
 	user = "postgres"
 	password = "12340"
 	dbname = "marathon"
 )
-
 
 type event struct {
 	Name string
@@ -35,43 +37,27 @@ func hashValue(c event) uint64 {
 	return hash
 }
 
+func addEvent(name string, date string) event {
+	newEvent := event{name, date, ""}
+	newEvent.Key = strconv.FormatUint(hashValue(newEvent), 20)
+	return newEvent
+}
+
 // @title Marathon API
 // @version 1.0
-// @description API for the marathon service. Provides basic methods for managing a marathon.
+// @description API for the marathon service. Provides basic methods for managing a marathon
 // @termsOfService http://swagger.io/terms/
-
 // @contact.name API Support
 // @contact.email bilenkomaria02@gmail.com
-
 // @license.name MIT
 // @license.url https://git.tjump.ru/mariya.bilenko/med
-
 // @host localhost:8080
 // @BasePath /api/v1
-
-
-
 func main(){
 
-	var events []event
-
-	firstEvent := event{ "firstevent", "20.05.2021", "key" }
-	events= append(events, firstEvent)
-	secondEvent := event{ "secondevent", "21.05.2021", "key"}
-	events= append(events,secondEvent)
-	thirdEvent := event{" thirdevent", "22.05.2021", "key"}
-	events= append(events, thirdEvent)
-
-	for _, v := range events{
-		v.Key = strconv.FormatUint(hashValue(v), 20)
-		fmt.Println(hashValue(v))
-	}
-
-	//------db connect ------
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-
-	conn, err := sql.Open("postgres", psqlInfo)
+	//------db connect -----
+	conn, err := sql.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname))
 	if err != nil{
 		panic(err)
 	}
@@ -83,25 +69,8 @@ func main(){
 		panic(err)
 	}
 
-	_, err = conn.Exec("insert into events (name, date) values ( 'seventhEvent', '21.05.2021')")
-
-	if err != nil {
-		panic(err)
-	}
-
-
-	//fmt.Println(firstEvent.Key)
-
 	// -------gin------------
-
-	// -------gin------------
-
-
 	r:= gin.Default()
-
-	//r.LoadHTMLGlob("templates/form.html")
-
-	r.GET("/swagger/*any", ginSwagger.DisablingWrapHandler(swaggerFiles.Handler, "NAME_OF_ENV_VARIABLE"))
 
 	// checkEvent godoc
 	// @Summary Find event by key
@@ -110,22 +79,28 @@ func main(){
 	// @Success 200 {object}
 	// @Router /marathon [get]
 	r.GET("/marathon", func(c *gin.Context) {
+
 		key := c.Query("key")
-		flag := true
-		for _, v := range events {
-			if key == v.Key {
-				c.JSON(http.StatusOK, v)
-				flag = false
-				break
-			}
+
+		f := conn.QueryRow("SELECT * FROM events WHERE key = $1",key)
+		if err != nil {
+			panic(err)
 		}
-		if flag{
-			msg := "marathon "+key+" not found"
+
+
+		ev := new(event)
+		err := f.Scan(&ev.Name, &ev.Date, &ev.Key)
+		if err != sql.ErrNoRows{
+			c.JSON(http.StatusOK,ev)
+		}
+
+
+		if err != nil{
+			msg := "marathon " + key + " not found"
 			c.JSON(404, gin.H{
 				"message": msg,
 			})
 		}
-
 	})
 
 
@@ -133,17 +108,13 @@ func main(){
 	// @Summary Add new event
 	// @Produce json
 	// @Success 200 {object}
-	// @Router /marathon [get]
-	r.POST("/marathon", func(c *gin.Context){
+	// @Router /marathon [post]
+	r.POST("/marathon", func(c *gin.Context) {
 
-		name := c.PostForm("name" )
+		name := c.PostForm("name")
 		date := c.PostForm("date")
-
-		newEvent := event{name,date,""}
-		newEvent.Key = strconv.FormatUint(hashValue(newEvent), 20)
-		//_, err = conn.Exec("insert into events (name, date) values ( $1, $2)", newEvent.Name, newEvent.Date)
-		_, err = conn.Exec("insert into events (name, date) values ( $1, $2)", newEvent.Name, newEvent.Date)
-		fmt.Printf("name: %s; date: %s; key: %s",newEvent.Name,newEvent.Date, newEvent.Key)
+		newEvent := addEvent(name, date)
+		_, err = conn.Exec("insert into events (name, date) values ( $1, $2, $3)", newEvent.Name, newEvent.Date, newEvent.Key)
 		c.JSON(200,gin.H{"key": newEvent.Key})
 
 	})

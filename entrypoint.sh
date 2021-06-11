@@ -1,13 +1,5 @@
 #!/bin/sh
 
 echo "Ready to work"
-
-apt-get update
-#ping server
-apt-get -y install postgresql-client
-
-# shellcheck disable=SC2037
-PGPASSWORD=12340 psql -U postgres -h db  -c "CREATE DATABASE marathon"
-tern migrate
-
+PGPASSWORD=12340 psql -U postgres -h db  -c "CREATE DATABASE marathon;"
 go run src/main.go

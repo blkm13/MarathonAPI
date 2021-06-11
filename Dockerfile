@@ -3,6 +3,9 @@ FROM golang:1.16
 WORKDIR /usr/appl
 COPY go.mod .
 
+RUN apt-get update
+RUN apt-get -y install postgresql-client
+
 RUN go get -u github.com/jackc/tern
 RUN go get github.com/gin-gonic/gin
 
