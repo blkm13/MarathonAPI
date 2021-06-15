@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "API for the marathon service. Provides basic methods for managing a marathon.",
+        "description": "API for the marathon service. Provides basic methods for managing a marathon",
         "title": "Marathon API",
         "termsOfService": "http://swagger.io/terms/",
         "contact": {
@@ -16,5 +16,61 @@
     },
     "host": "localhost:8080",
     "basePath": "/api/v1",
-    "paths": {}
+    "paths": {
+        "/marathon": {
+            "get": {
+                "description": "search for an event by key in the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Find event by key",
+                "operationId": "get-string-by-int",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.event"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "add new event",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Add new event",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.event": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        }
+    }
 }

@@ -9,7 +9,6 @@ import (
 	"github.com/mitchellh/hashstructure"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
-	_ "github.com/swaggo/swag/example/celler/controller"
 	_ "github.com/swaggo/swag/example/celler/model"
 	"net/http"
 	"strconv"
@@ -29,6 +28,17 @@ type event struct {
 	Key string
 }
 
+type Controller struct {
+}
+
+// NewController example
+func NewController() *Controller {
+	return &Controller{}
+}
+
+// Message example
+
+
 func hashValue(c event) uint64 {
 	hash, err := hashstructure.Hash(c, nil)
 	if err != nil {
@@ -41,6 +51,59 @@ func addEvent(name string, date string) event {
 	newEvent := event{name, date, ""}
 	newEvent.Key = strconv.FormatUint(hashValue(newEvent), 20)
 	return newEvent
+}
+
+func connect() *sql.DB {
+	conn, err := sql.Open("postgres", fmt.Sprintf("host=%s port=%d user=%s "+"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname))
+	if err != nil{
+		panic(err)
+	}
+	return conn
+}
+
+
+// checkEvent godoc
+// @Summary Find event by key
+// @Description search for an event by key in the database
+// @ID get-string-by-int
+// @Accept json
+// @Produce json
+// @Success 200 {object} event
+// @Router /marathon [get]
+func (c *Controller) checkEvent (ctx *gin.Context){
+	key := ctx.Query("key")
+
+	f := connect().QueryRow("SELECT * FROM events WHERE key = $1",key)
+
+	ev := new(event)
+	err := f.Scan(&ev.Name, &ev.Date, &ev.Key)
+	if err != sql.ErrNoRows{
+		ctx.JSON(http.StatusOK,ev)
+	}
+
+
+	if err != nil{
+		msg := "marathon " + key + " not found"
+		ctx.JSON(404, gin.H{
+			"message": msg,
+		})
+	}
+}
+
+// addEvent godoc
+// @Summary Add new event
+// @Description add new event
+// @Accept json
+// @Produce json
+// @Success 200 {string} event.Key
+// @Router /marathon [post]
+func (c *Controller) addEvents( ctx *gin.Context)  {
+	name := ctx.PostForm("name")
+	date := ctx.PostForm("date")
+	newEvent := addEvent(name, date)
+	connect().Exec("insert into events (name, date) values ( $1, $2, $3)", newEvent.Name, newEvent.Date, newEvent.Key)
+	ctx.JSON(200,gin.H{"key": newEvent.Key})
 }
 
 // @title Marathon API
@@ -68,56 +131,13 @@ func main(){
 	if err!= nil {
 		panic(err)
 	}
-
 	// -------gin------------
 	r:= gin.Default()
-
-	// checkEvent godoc
-	// @Summary Find event by key
-	// @Produce json
-	// @Param event.key string
-	// @Success 200 {object}
-	// @Router /marathon [get]
-	r.GET("/marathon", func(c *gin.Context) {
-
-		key := c.Query("key")
-
-		f := conn.QueryRow("SELECT * FROM events WHERE key = $1",key)
-		if err != nil {
-			panic(err)
-		}
+	c := NewController()
 
 
-		ev := new(event)
-		err := f.Scan(&ev.Name, &ev.Date, &ev.Key)
-		if err != sql.ErrNoRows{
-			c.JSON(http.StatusOK,ev)
-		}
-
-
-		if err != nil{
-			msg := "marathon " + key + " not found"
-			c.JSON(404, gin.H{
-				"message": msg,
-			})
-		}
-	})
-
-
-	// addEvent godoc
-	// @Summary Add new event
-	// @Produce json
-	// @Success 200 {object}
-	// @Router /marathon [post]
-	r.POST("/marathon", func(c *gin.Context) {
-
-		name := c.PostForm("name")
-		date := c.PostForm("date")
-		newEvent := addEvent(name, date)
-		_, err = conn.Exec("insert into events (name, date) values ( $1, $2, $3)", newEvent.Name, newEvent.Date, newEvent.Key)
-		c.JSON(200,gin.H{"key": newEvent.Key})
-
-	})
+	r.GET("/marathon", c.checkEvent )
+	r.POST("/marathon", c.addEvents)
 
 	url := ginSwagger.URL("http://localhost:8080/swagger/doc.json")
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler, url))

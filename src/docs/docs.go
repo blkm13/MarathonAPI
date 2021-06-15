@@ -31,7 +31,63 @@ var doc = `{
     },
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
-    "paths": {}
+    "paths": {
+        "/marathon": {
+            "get": {
+                "description": "search for an event by key in the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Find event by key",
+                "operationId": "get-string-by-int",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.event"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "add new event",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Add new event",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "main.event": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "key": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        }
+    }
 }`
 
 type swaggerInfo struct {
@@ -50,7 +106,7 @@ var SwaggerInfo = swaggerInfo{
 	BasePath:    "/api/v1",
 	Schemes:     []string{},
 	Title:       "Marathon API",
-	Description: "API for the marathon service. Provides basic methods for managing a marathon.",
+	Description: "API for the marathon service. Provides basic methods for managing a marathon",
 }
 
 type s struct{}
