@@ -11,7 +11,7 @@ type Event struct {
 	Key string
 }
 
-func hashValue(c Event) uint64 {
+func HashValue(c Event) uint64 {
 	hash, err := hashstructure.Hash(c, nil)
 	if err != nil {
 		panic(err)
@@ -21,6 +21,6 @@ func hashValue(c Event) uint64 {
 
 func AddEvent(name string, date string) Event {
 	newEvent := Event{name, date, ""}
-	newEvent.Key = strconv.FormatUint(hashValue(newEvent), 20)
+	newEvent.Key = strconv.FormatUint(HashValue(newEvent), 20)
 	return newEvent
 }

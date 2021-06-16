@@ -2,4 +2,5 @@
 
 echo "Ready to work"
 PGPASSWORD=12340 psql -U postgres -h db  -c "CREATE DATABASE marathon;"
-go run src/main.go
+go run src/main.go populate
+go run src/main.go server
