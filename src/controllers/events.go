@@ -40,7 +40,7 @@ func (c *Controller) CheckEvent (ctx *gin.Context){
 // @Success 200 {string} event.Key
 // @Router /marathon [post]
 
-func (c *Controller) AddEvents( ctx *gin.Context)  {
+func (c *Controller) AddEvents	( ctx *gin.Context)  {
 	name := ctx.PostForm("name")
 	date := ctx.PostForm("date")
 	newEvent := AddEvent(name, date)
